@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WeatherGPT — Conversational AI Weather Intelligence Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Leaflet Map CSS & JS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      window.MAP_API_KEY =
+        "{{ map_api_key|default:'cb1_4sh9_1_90828963bd3a4e886bd43716' }}";
+    </script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark top-nav">
+      <div class="container-fluid px-lg-4">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+          <div class="brand-icon">
+            <i class="bi bi-cloud-sun-fill"></i>
+          </div>
+          <div>
+            <span class="brand-title"
+              >Weather<span class="text-gradient">GPT</span></span
+            >
+          </div>
+        </a>
+        <div class="d-flex align-items-center gap-3">
+          <span
+            class="status-indicator d-none d-md-inline-flex align-items-center gap-2"
+          >
+            <span class="pulse-dot"></span>
+            <span class="status-text">Live Intelligence Engine</span>
+          </span>
+          <a href="#chat-section" class="btn btn-sm btn-outline-glow d-md-none">
+            <i class="bi bi-chat-dots-fill me-1"></i> Chat
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid px-lg-4 py-3">
+      <!-- Search & Quick Navigation Header -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="search-glass-card p-3">
+            <form id="search-form" class="row g-2 align-items-center">
+              <div class="col-md-7 col-lg-8">
+                <div class="input-group">
+                  <span
+                    class="input-group-text bg-transparent border-0 text-muted"
+                  >
+                    <i class="bi bi-geo-alt-fill text-info"></i>
+                  </span>
+                  <input
+                    type="text"
+                    id="city-input"
+                    class="form-control search-input"
+                    placeholder="Search city (e.g. Bhopal, Patna, Delhi, Mumbai)..."
+                    value="Bhopal"
+                    autocomplete="off"
+                  />
+                  <button type="submit" class="btn btn-primary-glow px-4">
+                    <i class="bi bi-search me-1"></i> Explore
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-5 col-lg-4">
+                <div
+                  class="quick-cities d-flex flex-wrap gap-1 align-items-center"
+                >
+                  <span class="quick-label text-muted small me-1"
+                    >Popular:</span
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-xs quick-pill"
+                    data-city="Bhopal"
+                  >
+                    Bhopal
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-xs quick-pill"
+                    data-city="Patna"
+                  >
+                    Patna
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-xs quick-pill"
+                    data-city="Delhi"
+                  >
+                    Delhi
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-xs quick-pill"
+                    data-city="Mumbai"
+                  >
+                    Mumbai
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-xs quick-pill"
+                    data-city="Bengaluru"
+                  >
+                    Bengaluru
+                  </button>
+                </div>
+              </div>
+            </form>
+            <div
+              id="favorites-bar"
+              class="mt-2 pt-2 border-top border-secondary-subtle d-flex align-items-center gap-2 flex-wrap d-none"
+            >
+              <span class="text-muted small"
+                ><i class="bi bi-bookmark-star-fill text-warning me-1"></i
+                >Saved:</span
+              >
+              <div
+                id="favorites-list"
+                class="d-flex flex-wrap gap-1 align-items-center"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Grid (2 Columns: Weather Dashboard + AI Chatbot) -->
+      <div class="row g-4">
+        <!-- Left Column: Forecast & Intelligence Dashboard -->
+        <div class="col-lg-7 col-xl-8">
+          <!-- Loading / Error Alert -->
+          <div id="dashboard-loader" class="text-center py-5 d-none">
+            <div class="spinner-border text-info" role="status"></div>
+            <p class="text-muted mt-2">
+              Fetching meteorological data & running risk models...
+            </p>
+          </div>
+          <div
+            id="dashboard-error"
+            class="alert alert-danger d-none shadow-sm"
+            role="alert"
+          ></div>
+
+          <div id="dashboard-content">
+            <!-- Current Weather Hero Card -->
+            <div class="hero-weather-card mb-4">
+              <div class="row align-items-center">
+                <div class="col-md-6 mb-3 mb-md-0">
+                  <div class="location-badge mb-1 d-flex align-items-center">
+                    <i class="bi bi-pin-map-fill text-danger me-1"></i>
+                    <span id="current-city-name" class="fw-bold">Bhopal</span
+                    >,&nbsp;
+                    <span id="current-country" class="text-muted">India</span>
+                    <button
+                      type="button"
+                      class="btn btn-xs btn-outline-warning ms-2 py-0 px-2"
+                      id="save-favorite-btn"
+                      title="Save this city to favorites"
+                    >
+                      <i class="bi bi-star" id="favorite-icon"></i>
+                      <span id="save-favorite-text" style="font-size: 0.75rem"
+                        >Save</span
+                      >
+                    </button>
+                  </div>
+                  <div class="text-muted small mb-2" id="current-date-time">
+                    Today, Live Update
+                  </div>
+                  <div class="d-flex align-items-baseline gap-2">
+                    <span class="hero-temp" id="current-temperature">32</span
+                    ><span class="hero-unit">°C</span>
+                    <span class="condition-badge" id="current-condition"
+                      >Clear Sky</span
+                    >
+                  </div>
+                  <div class="feels-like-text text-muted mt-1">
+                    Feels like <span id="current-feels-like">34</span>°C
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <div class="metric-mini-card">
+                        <div class="metric-icon">
+                          <i class="bi bi-droplet-half text-info"></i>
+                        </div>
+                        <div class="metric-info">
+                          <div class="metric-label">Humidity</div>
+                          <div class="metric-value" id="current-humidity">
+                            55%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="metric-mini-card">
+                        <div class="metric-icon">
+                          <i class="bi bi-wind text-primary"></i>
+                        </div>
+                        <div class="metric-info">
+                          <div class="metric-label">Wind Speed</div>
+                          <div class="metric-value" id="current-wind">
+                            12 km/h
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="metric-mini-card">
+                        <div class="metric-icon">
+                          <i class="bi bi-cloud-rain-fill text-primary"></i>
+                        </div>
+                        <div class="metric-info">
+                          <div class="metric-label">Precipitation</div>
+                          <div class="metric-value" id="current-precip">
+                            0 mm
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="metric-mini-card">
+                        <div class="metric-icon">
+                          <i class="bi bi-shield-check text-success"></i>
+                        </div>
+                        <div class="metric-info">
+                          <div class="metric-label">Source</div>
+                          <div
+                            class="metric-value text-truncate"
+                            title="Open-Meteo Verified"
+                          >
+                            Open-Meteo
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weather Intelligence Risk Engine Box -->
+            <div class="intelligence-card mb-4">
+              <div
+                class="card-header-clean d-flex align-items-center justify-content-between mb-3"
+              >
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-cpu-fill text-warning fs-5"></i>
+                  <h5 class="m-0 fw-bold">Weather Intelligence Engine</h5>
+                </div>
+                <span
+                  class="badge bg-dark-subtle border border-secondary text-light"
+                  >Real-Time Risk Analysis</span
+                >
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-4">
+                  <div
+                    class="risk-gauge-card p-2 text-center"
+                    id="rain-risk-card"
+                  >
+                    <div class="risk-title text-muted small">
+                      <i class="bi bi-cloud-rain me-1"></i> Rain Risk
+                    </div>
+                    <div
+                      class="risk-badge badge bg-success mt-1"
+                      id="rain-risk-badge"
+                    >
+                      Low
+                    </div>
+                    <div class="risk-sub small text-muted mt-1">
+                      <span id="intel-max-rain">0</span>% peak
+                    </div>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div
+                    class="risk-gauge-card p-2 text-center"
+                    id="heat-risk-card"
+                  >
+                    <div class="risk-title text-muted small">
+                      <i class="bi bi-thermometer-sun me-1"></i> Heat Risk
+                    </div>
+                    <div
+                      class="risk-badge badge bg-success mt-1"
+                      id="heat-risk-badge"
+                    >
+                      Low
+                    </div>
+                    <div class="risk-sub small text-muted mt-1">
+                      <span id="intel-max-temp">32</span>°C max
+                    </div>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div
+                    class="risk-gauge-card p-2 text-center"
+                    id="wind-risk-card"
+                  >
+                    <div class="risk-title text-muted small">
+                      <i class="bi bi-wind me-1"></i> Wind Risk
+                    </div>
+                    <div
+                      class="risk-badge badge bg-success mt-1"
+                      id="wind-risk-badge"
+                    >
+                      Low
+                    </div>
+                    <div class="risk-sub small text-muted mt-1">
+                      <span id="intel-max-wind">14</span> km/h
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="recommendations-box p-3 rounded">
+                <div
+                  class="fw-semibold mb-1 text-light d-flex align-items-center gap-2"
+                >
+                  <i class="bi bi-lightbulb-fill text-warning"></i> Actionable
+                  Advisory:
+                </div>
+                <ul
+                  class="mb-0 text-muted small ps-3"
+                  id="recommendations-list"
+                >
+                  <li>Weather conditions look generally favorable.</li>
+                </ul>
+              </div>
+              <div
+                class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top border-secondary-subtle"
+              >
+                <div
+                  class="small text-muted"
+                  id="intel-details"
+                  style="font-size: 0.75rem"
+                >
+                  <span id="intel-window-span"></span>
+                </div>
+                <div
+                  class="small text-muted text-end"
+                  style="font-size: 0.7rem"
+                >
+                  <i class="bi bi-shield-check text-info me-1"></i>Open-Meteo
+                  Model &bull; Official alerts: IMD
+                </div>
+              </div>
+            </div>
+
+            <!-- 24-Hour Interactive Forecast Chart -->
+            <div class="chart-glass-card mb-4 p-3">
+              <div
+                class="d-flex align-items-center justify-content-between mb-3"
+              >
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-graph-up text-info fs-5"></i>
+                  <h5 class="m-0 fw-bold">
+                    24-Hour Forecast & Rain Probability
+                  </h5>
+                </div>
+                <div class="chart-legend-badges small">
+                  <span class="badge bg-temp-legend me-1"
+                    >● Temperature (°C)</span
+                  >
+                  <span class="badge bg-rain-legend">■ Rain Chance (%)</span>
+                </div>
+              </div>
+              <div
+                class="chart-container"
+                style="position: relative; height: 220px; width: 100%"
+              >
+                <canvas id="hourlyWeatherChart"></canvas>
+              </div>
+              <!-- Hourly Weather Scroll Strip -->
+              <div class="hourly-strip-wrapper mt-3">
+                <div class="hourly-strip d-flex gap-2 pb-2" id="hourly-strip">
+                  <!-- Populated dynamically by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Interactive Meteorological Map -->
+            <div class="map-glass-card mb-4 p-3">
+              <div
+                class="d-flex align-items-center justify-content-between mb-3"
+              >
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-map-fill text-danger fs-5"></i>
+                  <h5 class="m-0 fw-bold">Interactive Meteorological Map</h5>
+                </div>
+                <span
+                  class="badge bg-dark-subtle border border-secondary text-info small"
+                >
+                  <i class="bi bi-cursor-fill me-1"></i>Click anywhere to
+                  explore
+                </span>
+              </div>
+              <div
+                id="weather-map"
+                style="
+                  height: 280px;
+                  width: 100%;
+                  border-radius: 12px;
+                  z-index: 1;
+                "
+              ></div>
+            </div>
+
+            <!-- 7-Day Extended Forecast -->
+            <div class="forecast-section mb-4">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-calendar3 text-primary fs-5"></i>
+                <h5 class="m-0 fw-bold">7-Day Extended Outlook</h5>
+              </div>
+              <div class="row g-2" id="daily-forecast-container">
+                <!-- Populated dynamically by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: WeatherGPT Conversational AI Assistant -->
+        <div class="col-lg-5 col-xl-4" id="chat-section">
+          <div class="chat-glass-container d-flex flex-column position-relative overflow-hidden">
+            <!-- Chat Header -->
+            <div
+              class="chat-header p-3 d-flex align-items-center justify-content-between border-bottom border-secondary-subtle"
+            >
+              <div class="d-flex align-items-center gap-2">
+                <div class="bot-avatar">
+                  <i class="bi bi-robot"></i>
+                </div>
+                <div>
+                  <h6 class="m-0 fw-bold">WeatherGPT Assistant</h6>
+                  <span class="ai-status-pill text-success small"
+                    >● Grounded in Real Data</span
+                  >
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <button
+                  type="button"
+                  id="gemini-live-btn"
+                  class="btn btn-sm btn-gradient-live text-light border-0 px-2 d-flex align-items-center gap-1"
+                  title="Start Hands-Free Gemini Live Voice Mode"
+                >
+                  <span class="live-dot"></span>
+                  <span style="font-size: 0.75rem; font-weight: 700;">Live</span>
+                </button>
+                <select
+                  id="chat-lang"
+                  class="form-select form-select-sm bg-dark text-light border-secondary"
+                  style="font-size: 0.75rem"
+                >
+                  <option value="en" selected>🇬🇧 English</option>
+                  <option value="hi">🇮🇳 Hindi / हिंदी</option>
+                </select>
+                <button
+                  type="button"
+                  id="clear-chat-btn"
+                  class="btn btn-sm btn-outline-secondary text-light border-secondary"
+                  title="Reset Conversation Memory"
+                >
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Prompt Suggestions -->
+            <div
+              class="chat-suggestions px-3 py-2 border-bottom border-secondary-subtle"
+            >
+              <div class="small text-muted mb-1">Quick prompts:</div>
+              <div class="d-flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  class="btn btn-xs prompt-pill"
+                  data-prompt="Will it rain today evening in Bhopal?"
+                >
+                  🌧️ Rain today?
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs prompt-pill"
+                  data-prompt="Kal Patna mein baarish hogi kya?"
+                >
+                  🌦️ Kal Patna mein?
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs prompt-pill"
+                  data-prompt="What is the temperature in Delhi?"
+                >
+                  🌡️ Delhi temp
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs prompt-pill"
+                  data-prompt="Is it safe to travel outdoors today?"
+                >
+                  🚶 Travel safety?
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat Message Stream -->
+            <div
+              class="chat-messages flex-grow-1 p-3 overflow-y-auto"
+              id="chat-messages"
+            >
+              <!-- Welcome message -->
+              <div class="chat-bubble bot-bubble mb-3">
+                <div class="bubble-header d-flex align-items-center gap-1 mb-1">
+                  <i class="bi bi-robot text-info"></i>
+                  <span class="fw-semibold small">WeatherGPT</span>
+                </div>
+                <div class="bubble-content">
+                  Hello! 👋 I am <strong>WeatherGPT</strong>, your AI Weather
+                  Intelligence Assistant. <br /><br />
+                  Ask me anything about rainfall, temperature, wind speeds, or
+                  multi-day forecasts for any city in English or Hindi!
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Typing / Loading Indicator -->
+            <div id="chat-typing" class="px-3 py-2 d-none">
+              <div
+                class="typing-indicator d-inline-flex align-items-center gap-1"
+              >
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="small text-muted ms-2"
+                  >Analyzing meteorological data...</span
+                >
+              </div>
+            </div>
+
+            <!-- Chat Input Form -->
+            <div class="chat-input-area p-3 border-top border-secondary-subtle">
+              <form id="chat-form" class="d-flex gap-2 align-items-center">
+                <button
+                  type="button"
+                  class="btn btn-outline-info border-secondary position-relative"
+                  id="voice-input-btn"
+                  title="Speak question (Speech-to-Text)"
+                >
+                  <i class="bi bi-mic-fill" id="mic-icon"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary border-secondary px-2 text-info"
+                  id="voice-lang-pill"
+                  style="font-size: 0.72rem; min-width: 52px; font-weight: 700;"
+                  title="Click to toggle Voice Language (English / Hindi)"
+                >
+                  🇬🇧 EN
+                </button>
+                <input
+                  type="text"
+                  id="chat-input"
+                  class="form-control chat-input-field"
+                  placeholder="Ask or speak e.g. 'Will it rain today in Bhopal?'..."
+                  autocomplete="off"
+                />
+                <button
+                  type="submit"
+                  class="btn btn-primary-glow px-3"
+                  id="chat-send-btn"
+                >
+                  <i class="bi bi-send-fill"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- Gemini Live Voice Modal / Overlay -->
+            <div id="gemini-live-modal" class="gemini-live-overlay d-none">
+              <div class="gemini-live-content text-center p-3">
+                <div class="d-flex justify-content-between align-items-center w-100 mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary-subtle text-info border border-info-subtle">
+                      ✨ Gemini Live
+                    </span>
+                    <span id="live-lang-badge" class="badge bg-dark border border-secondary text-light">
+                      🇬🇧 EN
+                    </span>
+                  </div>
+                  <button type="button" class="btn-close-live" id="close-live-btn" title="End Live Session">&times;</button>
+                </div>
+
+                <!-- Animated Gemini Live Pulsing Orb Rings -->
+                <div class="live-orb-container my-3" id="live-orb-wrapper">
+                  <div class="live-orb-ring ring-3"></div>
+                  <div class="live-orb-ring ring-2"></div>
+                  <div class="live-orb-ring ring-1"></div>
+                  <div class="live-orb-core" id="live-orb-core">
+                    <i class="bi bi-soundwave" id="live-orb-icon"></i>
+                  </div>
+                </div>
+
+                <!-- Live Status Indicator -->
+                <div class="live-status mb-2">
+                  <span class="fw-bold fs-6 text-light" id="live-status-text">Listening...</span>
+                </div>
+
+                <!-- Live Transcript Stream -->
+                <div class="live-transcript-box p-3 mb-3 text-start">
+                  <div class="live-user-speech text-light small mb-2" id="live-user-speech">
+                    <span class="text-muted fst-italic">Speak your weather query...</span>
+                  </div>
+                  <div class="live-bot-speech text-info small" id="live-bot-speech">
+                  </div>
+                </div>
+
+                <!-- Live Controls -->
+                <div class="d-flex justify-content-center gap-2">
+                  <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" id="stop-live-btn">
+                    <i class="bi bi-telephone-x me-1"></i> End Live
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 text-light border-secondary" id="toggle-live-lang-btn">
+                    <i class="bi bi-translate me-1"></i> <span id="toggle-live-lang-text">🇮🇳 Hindi</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer
+        class="mt-5 py-3 text-center border-top border-secondary-subtle text-muted small"
+      >
+        <div>
+          <strong>WeatherGPT</strong> &bull; Conversational AI for Weather
+          Forecasting, Alerts & Climate Intelligence &bull; SIH 2026 Problem SIH26068
+        </div>
+        <div class="mt-1">
+          Data provided by
+          <a
+            href="https://open-meteo.com/"
+            target="_blank"
+            class="text-info text-decoration-none"
+            >Open-Meteo</a
+          >
+        </div>
+        <div>
+          <strong>Made with ❤️ by Nikhil Kumar</strong>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="/static/js/app.js?v=3.4"></script>
+  </body>
+</html>
