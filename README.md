@@ -103,7 +103,7 @@ cp .env.example .env
 ```
 Add your Gemini or OpenAI API key if you wish to use external LLM generation:
 ```env
-MAP_API_KEY=cb1_4sh9_1_90828963bd3a4e886bd43716
+MAP_API_KEY=your_map_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=
 ```
